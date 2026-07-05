@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Virtual envs
+venv/
+env/
+.venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large intermediate artifacts (do NOT commit audio / raw HTML)
+*.m4a
+*.wav
+*.mp4
+*.mp3
+*.html.gz
+
+# Whisper model cache (downloaded on first run, do NOT commit)
+*.pt
+*.bin
+
+# Local secrets / config overrides
+.env.local
+*.local.toml
+.cache/
+
+# IDE scratch
+scratch/
+tmp/
+
+# Allow the cached transcripts we actually ship in this demo
+!transcripts/*.json
+!transcripts/*.txt
