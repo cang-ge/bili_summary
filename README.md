@@ -10,6 +10,10 @@
 D:\Study\bili_summary\
 ├── README.md                 ← 你正在看的
 ├── .gitignore
+├── app.py                    ← Streamlit Web UI 入口
+├── run_ui.bat                ← Windows 一键启动
+├── run_ui.sh                 ← Linux/Mac 一键启动
+│
 ├── src/                      ← 所有生成脚本（按顺序可重跑）
 │   ├── parse_bili_page.py    #   1. 解析 B 站 HTML 拿到 metadata
 │   ├── parse_danmaku.py      #   2. 解压 danmaku XML
@@ -20,7 +24,8 @@ D:\Study\bili_summary\
 │   ├── make_schedule_table.py#  5c. 生成每日作息表格图
 │   ├── make_diagram_listening.py # 5d. 生成精听流程图
 │   ├── make_pdf.py           #   6a. 用 reportlab 组装 PDF
-│   └── make_docx.py          #   6b. 用 python-docx 组装 Word
+│   ├── make_docx.py          #   6b. 用 python-docx 组装 Word
+│   └── pipeline.py           #   7. 流水线统一入口（Web UI 调用）
 │
 ├── assets/                   ← 生成的 PNG / SVG（嵌入 PDF/Word 用）
 │   ├── cover.png
@@ -41,7 +46,7 @@ D:\Study\bili_summary\
 │   └── summary.docx          #   同款 Word 版
 │
 └── docs/
-    ├── architecture.md       # 整体架构图（待补）
+    ├── architecture.md       # 整体架构图
     ├── design-system.md      # 配色 + 字体 + 排版规范
     └── multi-platform.md     # 多平台扩展指南
 ```
@@ -78,6 +83,7 @@ python-docx         # Word 生成
 Pillow              # 图像生成
 matplotlib          # 辅助图像
 pdfplumber          # PDF 验证（可选）
+streamlit           # Web UI 框架
 ```
 
 字体（系统自带，无需打包）：
@@ -86,11 +92,33 @@ pdfplumber          # PDF 验证（可选）
 
 ---
 
-## 🚀 快速复现（重跑管线）
+## 🚀 启动方式（两种）
+
+### 方式 A · Web UI（推荐，零代码）
+
+```bash
+# Windows
+run_ui.bat
+
+# Mac / Linux
+./run_ui.sh
+
+# 或直接
+pip install streamlit
+streamlit run app.py
+```
+
+浏览器打开 `http://localhost:8501`，看到：
+
+- 左侧：URL 输入框 + 一键按钮
+- 右侧：实时进度条 + 封面 / 信息图预览 + 下载按钮
+- 侧边栏：平台支持、环境要求、输出文件清单
+
+### 方式 B · 命令行（开发者）
 
 ```bash
 # 0. 环境
-pip install yt-dlp openai-whisper imageio-ffmpeg reportlab python-docx Pillow matplotlib pdfplumber
+pip install yt-dlp openai-whisper imageio-ffmpeg reportlab python-docx Pillow matplotlib pdfplumber streamlit
 
 # 1. 抓数据（B 站示例）
 python src/parse_bili_page.py
