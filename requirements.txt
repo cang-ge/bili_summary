@@ -1,0 +1,21 @@
+# bili_summary dependencies
+# Python 3.11+
+
+# Web UI
+streamlit>=1.30
+
+# Video / audio
+yt-dlp>=2024.1.1
+imageio-ffmpeg>=0.4.9
+openai-whisper>=20231117
+
+# Document rendering
+reportlab>=4.0
+python-docx>=1.1
+Pillow>=10.0
+
+# LLM (OpenAI-compatible client)
+openai>=1.40
+tiktoken>=0.5
+
+# Runtime deps pulled in transitively: httpx, requests, imageio-ffmpeg, etc.

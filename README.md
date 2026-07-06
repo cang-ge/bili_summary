@@ -1,145 +1,155 @@
-# bili_summary · 视频一键总结 → PDF / DOCX demo
+# bili_summary · 视频一键总结
 
-> 把任意视频（B 站、YouTube、X 等）变成结构化总结 + 编辑级 PDF / Word 文档。
+> 把任意 B 站视频变成 **编辑级 PDF / Word 总结文档**。
+> 一条 URL → 抓取 → Whisper 转录 → LLM 结构化总结 → 封面 / 信息图 → 导出。
+> Web UI 与 CLI 双入口，开箱即用。
 
----
-
-## 📂 项目结构
-
-```
-D:\Study\bili_summary\
-├── README.md                 ← 你正在看的
-├── .gitignore
-├── app.py                    ← Streamlit Web UI 入口
-├── run_ui.bat                ← Windows 一键启动
-├── run_ui.sh                 ← Linux/Mac 一键启动
-│
-├── src/                      ← 所有生成脚本（按顺序可重跑）
-│   ├── parse_bili_page.py    #   1. 解析 B 站 HTML 拿到 metadata
-│   ├── parse_danmaku.py      #   2. 解压 danmaku XML
-│   ├── transcribe.py         #   3. Whisper GPU 转录音频
-│   ├── build_summary.py      #   4. 时间桶分段
-│   ├── make_cover.py         #   5a. 生成封面 (PIL + Noto Serif SC)
-│   ├── make_infographic.py   #   5b. 生成 TL;DR 信息图
-│   ├── make_schedule_table.py#  5c. 生成每日作息表格图
-│   ├── make_diagram_listening.py # 5d. 生成精听流程图
-│   ├── make_pdf.py           #   6a. 用 reportlab 组装 PDF
-│   ├── make_docx.py          #   6b. 用 python-docx 组装 Word
-│   └── pipeline.py           #   7. 流水线统一入口（Web UI 调用）
-│
-├── assets/                   ← 生成的 PNG / SVG（嵌入 PDF/Word 用）
-│   ├── cover.png
-│   ├── infographic.png
-│   ├── daily-schedule.png
-│   └── intensive-listening-flow.png (+.svg)
-│
-├── transcripts/              ← 中间产物（输入 + 转录）
-│   ├── bili_page.html        #   B 站页 HTML（gzip 解压后）
-│   ├── bili_meta.json        #   解析后的视频元数据
-│   ├── bili_danmaku.json     #   弹幕时间戳
-│   ├── bili_transcript.json  #   Whisper 完整输出
-│   ├── bili_transcript.txt   #   纯文本转录
-│   └── yt-dlp-info.json      #   yt-dlp 抓的元数据
-│
-├── output/                   ← 最终交付物
-│   ├── summary.pdf           #   编辑级 PDF（含封面、图、表）
-│   └── summary.docx          #   同款 Word 版
-│
-└── docs/
-    ├── architecture.md       # 整体架构图
-    ├── design-system.md      # 配色 + 字体 + 排版规范
-    └── multi-platform.md     # 多平台扩展指南
-```
+![封面示例](assets/cover.png)
 
 ---
 
-## 🎯 这个 demo 干了什么
+## ✨ 特性
 
-输入：BV1cyDKBLEXY（Kasa_ZYY《雅思自学流程介绍，以及一些奇技淫巧》）
-
-输出：
-- **summary.pdf**（1.6 MB，14 页）
-- **summary.docx**（1.1 MB，13 节）
-
-PDF 内含：
-- 封面（编辑级大标题 + 数据卡 + 关键洞察 pull-quote）
-- 视频元数据表
-- 7 条核心结论信息图（bento 布局）
-- 每日作息时间表
-- 精听 5 步流程图
-- 词汇 / 听力 / 阅读 / 写作 / 口语 / 临场技巧 / 钱花在哪 / 关键金句 / 时间戳索引
+| 能力 | 实现 |
+|------|------|
+| 🎙 **本地 Whisper 转录** | small 模型 + CUDA FP16，RTX 5060 Ti 实测 18× 实时 |
+| 🤖 **LLM 结构化总结** | 任意 OpenAI 兼容端点（默认 deepseek-v4-flash / gpt-4o-mini） |
+| 🧠 **Map/Reduce 摘要** | 转录超 24K token 自动分段 → 二次合并 |
+| 🎨 **编辑级封面 / 信息图** | PIL + Noto Serif/Sans SC · 6000×3375 高清 PNG |
+| 📄 **PDF + DOCX 双导出** | reportlab + python-docx · 完整章节、金句、时间戳索引 |
+| 🌐 **Web UI** | Streamlit · 实时进度条 + 一键取消 + 文件预览与下载 |
+| 💾 **智能缓存** | 元数据 / 音频 / 转录 / LLM 总结 全流程可复用 |
+| ⚙️ **跨平台字体** | Windows / macOS / Linux 自动 fallback Noto Serif/Sans SC |
 
 ---
 
-## 🔧 核心依赖
+## 🚀 快速开始
 
-```
-Python ≥ 3.11
-yt-dlp              # 视频下载
-openai-whisper      # 语音转文字
-imageio-ffmpeg      # ffmpeg 二进制（whisper 必需）
-reportlab           # PDF 生成
-python-docx         # Word 生成
-Pillow              # 图像生成
-matplotlib          # 辅助图像
-pdfplumber          # PDF 验证（可选）
-streamlit           # Web UI 框架
-```
+### 前置依赖
 
-字体（系统自带，无需打包）：
-- **Noto Serif SC**（思源宋体）— 标题
-- **Noto Sans SC**（思源黑体）— 正文
+- Python ≥ 3.11
+- CUDA GPU（推荐，CPU 也可跑但慢）
+- ffmpeg（pip 自动装 `imageio-ffmpeg`）
+- 系统字体 **Noto Serif SC** / **Noto Sans SC**
+- B 站 **SESSDATA** cookie（仅下载必需，元数据抓取/总结不依赖）
 
----
-
-## 🚀 启动方式（两种）
-
-### 方式 A · Web UI（推荐，零代码）
+### 安装
 
 ```bash
-# Windows
-run_ui.bat
+git clone https://github.com/<your-name>/bili_summary.git
+cd bili_summary
+pip install -r requirements.txt
+```
 
-# Mac / Linux
-./run_ui.sh
+### 配置
 
-# 或直接
-pip install streamlit
+```bash
+cp llm_config.example.json llm_config.json
+# 编辑 llm_config.json，填入 base_url / api_key / model
+```
+
+或用环境变量（优先级更高）：
+
+```powershell
+$env:OPENCODE_BASE_URL = "https://api.opencode.ai/v1"
+$env:OPENCODE_API_KEY  = "<your key>"
+$env:LLM_MODEL         = "deepseek-v4-flash"
+```
+
+### 启动 Web UI
+
+```bash
 streamlit run app.py
+# Windows: run_ui.bat
+# Mac/Linux: ./run_ui.sh
 ```
 
-浏览器打开 `http://localhost:8501`，看到：
+浏览器访问 <http://localhost:8501> → 粘贴 B 站视频 URL → 点 **🚀 开始生成**。
 
-- 左侧：URL 输入框 + 一键按钮
-- 右侧：实时进度条 + 封面 / 信息图预览 + 下载按钮
-- 侧边栏：平台支持、环境要求、输出文件清单
-
-### 方式 B · 命令行（开发者）
+### 命令行
 
 ```bash
-# 0. 环境
-pip install yt-dlp openai-whisper imageio-ffmpeg reportlab python-docx Pillow matplotlib pdfplumber streamlit
-
-# 1. 抓数据（B 站示例）
-python src/parse_bili_page.py
-python src/parse_danmaku.py
-
-# 2. 下载音频 + Whisper 转录（需 GPU: RTX 5060 Ti 实测 3:40 / 66min）
-python src/transcribe.py
-
-# 3. 生成图像资产
-python src/make_cover.py
-python src/make_infographic.py
-python src/make_schedule_table.py
-python src/make_diagram_listening.py
-
-# 4. 组装 PDF + Word
-python src/make_pdf.py
-python src/make_docx.py
-
-# 5. 验证
-python -c "import pdfplumber; pdf=pdfplumber.open('output/summary.pdf'); print(len(pdf.pages), 'pages')"
+python src/run_pipeline_cli.py "https://www.bilibili.com/video/BVxxxxxxxxxx" \
+    --out output
 ```
+
+进度以 JSON line 写到 stdout，最终 `summary.pdf` / `summary.docx` 在 `output/`。
+
+---
+
+## 🤖 LLM 协议选择
+
+`bili_summary` 通过 `protocol` 字段支持两种主流 LLM 调用协议，按需切换：
+
+| 协议 | 端点 | 适用场景 | 鉴权头 |
+|------|------|---------|--------|
+| `openai` *(默认)* | `{base_url}/v1/chat/completions` | OpenAI 官方 / OpenAI 兼容代理（opencode、DeepSeek、OpenRouter 等） | `Authorization: Bearer ...` |
+| `anthropic` | `{base_url}/v1/messages` | Claude 原生端点 / 同时提供 Anthropic 协议的代理 | `x-api-key: ...` + `anthropic-version` |
+
+### 切换方式
+
+**方式 1 · llm_config.json**
+
+```json
+{
+    "protocol": "anthropic",
+    "base_url": "https://api.anthropic.com",
+    "api_key":  "sk-ant-your-key",
+    "model":    "claude-3-5-sonnet-20241022"
+}
+```
+
+**方式 2 · 环境变量**（优先级更高）
+
+```powershell
+$env:LLM_PROTOCOL = "anthropic"
+$env:OPENCODE_BASE_URL = "https://api.anthropic.com"
+$env:OPENCODE_API_KEY  = "sk-ant-your-key"
+$env:LLM_MODEL         = "claude-3-5-sonnet-20241022"
+```
+
+### 协议差异提醒
+
+- **OpenAI 协议** 支持 `response_format: {type: json_object}`，结构化输出更稳。
+- **Anthropic 协议** 不支持 JSON-mode，依赖 prompt 强约束；代码已自动分离 `system` 到顶层字段。
+- 切换协议**无需重启已运行的 pipeline**，但需重启 Streamlit 进程以让新 env 生效。
+
+---
+
+```bash
+python src/run_pipeline_cli.py "https://www.bilibili.com/video/BVxxxxxxxxxx" \
+    --out output
+```
+
+进度以 JSON line 写到 stdout，最终 `summary.pdf` / `summary.docx` 在 `output/`。
+
+---
+
+## 🏗 架构
+
+```
+URL ──► fetch meta ──► download audio ──► Whisper ──► LLM summarize
+                          │                                   │
+                          ▼                                   ▼
+                       cache                              build layout
+                                                              │
+                          ┌───────────────────────────────────┼──────────────────────┐
+                          ▼                                   ▼                      ▼
+                    make_cover.png                    make_infographic.png     render_pdf + render_docx
+```
+
+模块说明：
+
+| 模块 | 职责 |
+|------|------|
+| [src/pipeline.py](src/pipeline.py) | 编排 5 步流水线 + 缓存判定 + 进度回调 |
+| [src/download_bili_audio.py](src/download_bili_audio.py) | B 站 `/x/web-interface/view` + 传统 `/x/player/playurl` 绕过 wbi 风控 |
+| [src/llm_client.py](src/llm_client.py) | OpenAI 兼容调用 + tiktoken 计数 + map/reduce 分段 + JSON-mode 容错 |
+| [src/make_cover.py](src/make_cover.py) / [src/make_infographic.py](src/make_infographic.py) | PIL 高清 PNG 渲染 |
+| [src/render_pdf.py](src/render_pdf.py) / [src/render_docx.py](src/render_docx.py) | reportlab / python-docx 文档导出 |
+| [src/design_tokens.py](src/design_tokens.py) | 跨渲染器共享色值 + 字体路径 fallback |
+
+更深入的架构与扩展计划见 [`docs/`](docs/)。
 
 ---
 
@@ -147,43 +157,70 @@ python -c "import pdfplumber; pdf=pdfplumber.open('output/summary.pdf'); print(l
 
 | Token | 值 | 用途 |
 |-------|----|----|
-| **主色 Ink** | `#0F172A` | 标题、正文 |
-| **辅色 Gold** | `#B8860B` | 强调、数字、eyebrow |
-| **背景 Paper** | `#FAF8F5` | 暖白纸 |
-| **辅文 Slate** | `#64748B` | 副文 |
-| **边线 Border** | `#E8E2D5` | 卡片、表格 |
-| **强调 Soft** | `#F4F0E8` | 信息块底色 |
-| **分类紫** | `#7C3AED` / `#F3E8FF` | 上午输入 |
-| **分类绿** | `#059669` / `#D1FAE5` | 下午练习 |
-| **分类琥珀** | `#D97706` / `#FEF3C7` | 晚上输出 |
+| **Ink** | `#0F172A` | 标题、正文 |
+| **Gold** | `#B8860B` | 强调、数字、eyebrow |
+| **Paper** | `#FAF8F5` | 暖白纸背景 |
+| **Slate** | `#64748B` | 副文 |
+| **Border** | `#E8E2D5` | 卡片、表格边线 |
+| **Muted BG** | `#F4F0E8` | 信息块底色 |
 
 字体：
+
 - 中文标题：**Noto Serif SC** Black weight
-- 中文正文：**Noto Sans SC** Regular/Bold
-- 英文/数字：系统无衬线
-- 装饰英文：Noto Serif SC Italic + 薰衣草色 `#EFE7FC`
+- 中文正文：**Noto Sans SC** Regular / Bold
+- 装饰英文：Noto Serif SC Italic + 薰衣草 `#EFE7FC`
+
+详见 [docs/design-system.md](docs/design-system.md)。
 
 ---
 
-## 🌐 多平台扩展
+## 🔒 安全与隐私
 
-详见 [`docs/multi-platform.md`](docs/multi-platform.md)。
+> ⚠️ **本项目运行时会下载 B 站视频并调用第三方 LLM**。请遵守相关平台的服务条款与版权规定，**仅用于个人学习与研究**。
 
-简而言之：每个平台一个 `*Fetcher.py`，实现 `VideoFetcher` 接口，
-URL 自动路由，YouTube 等有官方字幕的可跳过 Whisper。
+**绝不要提交的内容**（已在 `.gitignore` 中排除）：
+
+| 文件 | 原因 |
+|------|------|
+| `llm_config.json` | 含 LLM API key |
+| `.bili_cookie` / `.bili_cookies.txt` | B 站登录态 cookie，等同账号密码 |
+| `.history/` | IDE 历史快照，可能含旧 key |
+| `.streamlit/` | Streamlit 本地配置 |
+| `output/` | 整目录——含 mp3/mp4/总结文档，单视频可上百 MB |
+| `*.mp3` / `*.mp4` | 下载的媒体文件（版权 + 体积） |
+| `__pycache__/` / `.venv/` | 编译/虚拟环境产物 |
+
+**推荐工作流**：
+
+1. Fork 本仓库 → 改远端为私有 → 你的本地工作树
+2. 通过 `llm_config.example.json` 提示其他用户**如何**配置，但不暴露你的 key
+3. 公开仓库**永远不要** force-push 含 key 的 commit——若已发生，立刻 revoke key
 
 ---
 
-## 📋 已知限制
+## ⚠️ 已知限制
 
-1. **B 站音频下载**：仅最小音质绕过大会员限制；高级画质需登录
-2. **弹幕**：仅 B 站原生支持；其他平台为空数组
-3. **Whisper**：首次运行会下载 ~500 MB 模型；之后本地缓存
-4. **GPU 要求**：RTX 5060 Ti 实测转录 18× 实时；CPU 模式约 0.3× 实时
-5. **PDF 中文**：依赖系统 `STSong-Light`（Mac/Linux 需替换为 Noto Serif SC）
+| 项 | 说明 |
+|----|------|
+| **B 站音频** | 仅最小音质（qn=80），绕过 wbi 风控；高级画质需登录态 |
+| **Whisper 模型** | 首次运行下载 ~500 MB，后续本地缓存 |
+| **GPU 推荐** | CPU 模式约 0.3× 实时，1 小时视频需 ~3 小时 |
+| **PDF 中文字体** | reportlab 默认 `STSong-Light`（macOS/Linux 可改为 Noto Serif SC） |
+| **平台支持** | 仅 B 站完整实现；YouTube/X/Vimeo 仅 URL 解析，无原生 fetcher（见 [roadmap](docs/roadmap-multi-platform.md)） |
+| **LLM 兼容性** | 同时支持 OpenAI 兼容 `/v1/chat/completions` 与 Anthropic 原生 `/v1/messages`，通过 `protocol` 字段切换（详见上方） |
 
 ---
 
-## 📝 License
+## 📜 License
 
-MIT — 自由使用、修改、商用。
+MIT — 自由使用、修改、商用。详见 [LICENSE](LICENSE)。
+
+---
+
+## 🙏 致谢
+
+- [openai/whisper](https://github.com/openai/whisper) — 本地语音转录
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — 视频下载生态
+- [reportlab](https://www.reportlab.com/) / [python-docx](https://python-docx.readthedocs.io/) — 文档生成
+- [Pillow](https://pillow.readthedocs.io/) — 图像渲染
+- [Streamlit](https://streamlit.io/) — Web UI 框架

@@ -1,4 +1,4 @@
-# Python
+# ============ Python ============
 __pycache__/
 *.py[cod]
 *$py.class
@@ -13,42 +13,59 @@ dist/
 htmlcov/
 .mypy_cache/
 
-# Virtual envs
+# ============ Virtual envs ============
 venv/
 env/
 .venv/
 .env
 
-# IDE
+# ============ IDE ============
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS
+# ============ OS ============
 .DS_Store
 Thumbs.db
 
-# Large intermediate artifacts (do NOT commit audio / raw HTML)
+# ============ Large intermediate artifacts (NEVER commit media) ============
 *.m4a
 *.wav
 *.mp4
 *.mp3
 *.html.gz
 
-# Whisper model cache (downloaded on first run, do NOT commit)
+# ============ Whisper model cache (~500 MB, downloaded on first run) ============
 *.pt
 *.bin
 
-# Local secrets / config overrides
+# ============ Local secrets — do NOT commit ============
 .env.local
 *.local.toml
 .cache/
 
-# IDE scratch
+# B 站 session cookies (hold login session — sensitive)
+.bili_cookie
+.bili_cookies.txt
+
+# Streamlit local config (may contain user prefs)
+.streamlit/
+
+# IDE / tool history snapshots
+.history/
+
+# LLM config (local, may contain API key)
+llm_config.json
+
+# Scratch / temp
 scratch/
 tmp/
 
-# Allow the cached transcripts we actually ship in this demo
+# ============ Demo shipping ============
+# Ship cached transcripts so the demo works out-of-the-box
 !transcripts/*.json
 !transcripts/*.txt
+
+# ============ Output (generated per run, never tracked) ============
+output/
