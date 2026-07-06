@@ -224,3 +224,7 @@ MIT — 自由使用、修改、商用。详见 [LICENSE](LICENSE)。
 - [reportlab](https://www.reportlab.com/) / [python-docx](https://python-docx.readthedocs.io/) — 文档生成
 - [Pillow](https://pillow.readthedocs.io/) — 图像渲染
 - [Streamlit](https://streamlit.io/) — Web UI 框架
+
+> 早期本地开发环境曾以 `MiniMax-M3` 作为 git 身份标识（沿用至今的所有 commit
+> 均由 [@cang-ge](https://github.com/cang-ge) 独立完成），故 GitHub 仓库页面会
+> 显示 "cang-ge and MiniMax-M3" 的合作者标记。
