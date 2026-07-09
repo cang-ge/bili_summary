@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
 from pipeline import run_pipeline, detect_url_platform
 
+
 # ============ Page Config ============
 st.set_page_config(
     page_title='bili_summary · 视频一键总结',
@@ -33,162 +34,16 @@ st.set_page_config(
     layout='wide',
     initial_sidebar_state='expanded',
 )
-
-# ============ Styles ============
-st.markdown("""
-<style>
-    /* Main page background — match design system paper */
-    .main, .stApp, [data-testid="stAppViewContainer"] {
-        background-color: #FAF8F5;
-    }
-    /* Sidebar background */
-    [data-testid="stSidebar"] {
-        background-color: #F4F0E8;
-    }
-    [data-testid="stSidebar"] .sidebar-content {
-        background-color: #F4F0E8;
-    }
-
-    /* Headers */
-    .main-header {
-        font-family: 'Noto Serif SC', 'Georgia', serif;
-        font-size: 3.2rem;
-        font-weight: 900;
-        margin-bottom: 0.3rem;
-        color: #0F172A;
-        letter-spacing: -0.02em;
-    }
-    .sub-header {
-        color: #64748B;
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-        font-family: 'Noto Sans SC', 'Segoe UI', sans-serif;
-    }
-
-    /* Progress bar color */
-    .stProgress > div > div > div > div {
-        background-color: #B8860B !important;
-    }
-
-    /* Stat cards */
-    .stat-card {
-        background: #FAF8F5;
-        border-left: 4px solid #B8860B;
-        padding: 1rem 1.2rem;
-        border-radius: 4px;
-        margin-bottom: 0.5rem;
-    }
-    .stat-num {
-        font-family: 'Noto Serif SC', 'Georgia', serif;
-        font-size: 1.8rem;
-        font-weight: 900;
-        color: #0F172A;
-    }
-    .stat-label {
-        color: #B8860B;
-        font-size: 0.85rem;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-
-    /* Buttons */
-    div.stButton > button {
-        border: 1px solid #E8E2D5;
-        font-family: 'Noto Sans SC', 'Segoe UI', sans-serif;
-        font-weight: 500;
-    }
-    div.stButton > button[kind="primary"] {
-        background-color: #0F172A;
-        color: #FFFFFF;
-        border: none;
-        font-weight: 600;
-    }
-    div.stButton > button[kind="primary"]:hover {
-        background-color: #1E293B;
-    }
-
-    /* Input fields */
-    .stTextInput > div > div > input {
-        background-color: #FFFFFF;
-        border: 1px solid #E8E2D5;
-        font-family: 'Noto Sans SC', 'Segoe UI', sans-serif;
-    }
-    .stTextInput > div > div > input:focus {
-        border-color: #B8860B;
-    }
-
-    /* Download buttons */
-    div.stDownloadButton > button {
-        background-color: #0F172A;
-        color: #FFFFFF;
-        border: none;
-        font-weight: 600;
-        font-family: 'Noto Sans SC', 'Segoe UI', sans-serif;
-    }
-    div.stDownloadButton > button:hover {
-        background-color: #1E293B;
-    }
-
-    /* Dividers */
-    hr {
-        border-top: 1px solid #E8E2D5;
-    }
-
-    /* Expander */
-    div.streamlit-expanderHeader {
-        font-family: 'Noto Sans SC', 'Segoe UI', sans-serif;
-        background-color: #FFFFFF;
-        border: 1px solid #E8E2D5;
-        border-radius: 4px;
-    }
-
-    /* Sidebar text */
-    .css-1d391kg, .css-1dk09z2, [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] .stMarkdown {
-        color: #0F172A;
-    }
-
-    /* Warning/info/success boxes */
-    div[data-testid="stAlert"] {
-        font-family: 'Noto Sans SC', sans-serif;
-        border-radius: 4px;
-    }
-
-    /* Tables in sidebar file list */
-    .stTable {
-        font-family: 'Noto Sans SC', 'SF Mono', monospace;
-        font-size: 0.8rem;
-    }
-
-    /* Checkbox */
-    .stCheckbox {
-        font-family: 'Noto Sans SC', sans-serif;
-    }
-
-    /* Sidebar cleanup buttons — match sidebar UI */
-    [data-testid="stSidebar"] button {
-        color: #0F172A !important;
-        -webkit-text-fill-color: #0F172A !important;
-        background: #F4F0E8 !important;
-        background-color: #F4F0E8 !important;
-        border: 1px solid #E8E2D5 !important;
-        font-weight: 600 !important;
-        font-family: 'Noto Sans SC', 'Segoe UI', sans-serif;
-    }
-    [data-testid="stSidebar"] button:hover {
-        background: #EDE8DC !important;
-        background-color: #EDE8DC !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Note: all theme colors are set via .streamlit/config.toml
+# (primaryColor / backgroundColor / textColor / font).
+# We deliberately avoid inline CSS injection — Streamlit 1.58+ changed
+# many data-testid attributes which made our old CSS selectors stale and
+# caused button/checkbox/heading text to lose contrast against the
+# background. config.toml is the supported, future-proof way to theme.
 
 # ============ Header ============
-st.markdown('<div class="main-header">视频一键总结</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="sub-header">B 站视频 &nbsp;·&nbsp; '
-    'Whisper 转录 + 编辑级排版 + PDF / DOCX 导出</div>',
-    unsafe_allow_html=True,
-)
+st.title('视频一键总结')
+st.caption('B 站视频 · Whisper 转录 + 编辑级排版 + PDF / DOCX 导出')
 
 # ============ Layout ============
 col_left, col_right = st.columns([1, 1.6], gap='large')
@@ -250,6 +105,7 @@ with col_right:
         st.session_state.pipeline_messages = []
         st.session_state.pipeline_error = None
         st.session_state.pipeline_cancel_requested = False
+        st.session_state.pipeline_done_signal = False
 
     state = st.session_state.pipeline_state
 
@@ -262,6 +118,7 @@ with col_right:
         st.session_state.pipeline_error = None
         st.session_state.pipeline_raw_output = []
         st.session_state.pipeline_cancel_requested = False
+        st.session_state.pipeline_done_signal = False
 
         cli_script = Path(__file__).parent / 'src' / 'run_pipeline_cli.py'
         cmd = [
@@ -307,6 +164,7 @@ with col_right:
                     pct = ev.get('pct', 0)
                     msg = ev.get('msg', '')
                     if msg == '__DONE__':
+                        st.session_state.pipeline_done_signal = True
                         break
                     if msg.startswith('__ERROR__:'):
                         st.session_state.pipeline_error = msg[len('__ERROR__:'):]
@@ -409,7 +267,10 @@ with col_right:
                 st.session_state.pipeline_state = 'cancelled'
             elif error_msg:
                 st.session_state.pipeline_state = 'error'
-            elif rc == 0:
+            elif rc == 0 or st.session_state.get('pipeline_done_signal'):
+                # If the reader thread captured __DONE__, trust it even if
+                # Windows process termination took a beat longer than
+                # the exit code probe.
                 st.session_state.pipeline_state = 'done'
             else:
                 st.session_state.pipeline_error = f'进程退出码 {rc}'
@@ -717,39 +578,8 @@ with st.sidebar:
     st.divider()
 
     # ---- Sticky cleanup panel at the bottom of the sidebar ----
-    # Render the actual content inside an anchor div, then style it with
-    # position: sticky so it stays visible while the rest of the sidebar scrolls.
-    st.markdown(
-        """
-<style>
-    /* Make the sidebar a flex container so we can push the sticky block down */
-    [data-testid="stSidebar"] > div:first-child {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
-    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-        display: flex;
-        flex-direction: column;
-        flex: 1 1 auto;
-        min-height: 0;
-    }
-    /* The anchor div that holds the cleanup panel */
-    .sidebar-cleanup-anchor {
-        margin-top: auto;          /* push to bottom of flex column */
-        position: sticky;
-        bottom: 0;
-        z-index: 10;
-        background: #F4F0E8;      /* match sidebar bg so it sits flush */
-        padding: 0.6rem 0 0.4rem 0;
-        border-top: 1px solid #E8E2D5;
-    }
-</style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="sidebar-cleanup-anchor">', unsafe_allow_html=True)
+    # Use Streamlit's container as the wrapper. No custom CSS needed —
+    # the cleanup panel sits naturally below other sidebar content.
     with st.container():
         st.markdown('### 🧹 清理中间产物')
         with st.expander('会清理什么？', expanded=False):
@@ -811,5 +641,3 @@ with st.sidebar:
                 if st.button('✗ 取消', use_container_width=True, key='cleanup_cancel'):
                     st.session_state['cleanup_armed'] = False
                     st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)

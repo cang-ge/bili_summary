@@ -353,36 +353,62 @@ class LLMClient:
         use_json_mode: bool = True,
     ) -> str:
         """Dispatcher: delegate to the right protocol implementation,
-        then run shared retry + JSON-parse validation."""
-        if self.protocol == 'anthropic':
-            content = self._call_anthropic(messages, on_progress)
-        else:
-            content = self._call_openai(
-                messages, on_progress, use_json_mode=use_json_mode,
-            )
+        retry on transient errors, and validate JSON output."""
+        last_err: Optional[Exception] = None
+        for attempt in range(3):
+            try:
+                if self.protocol == 'anthropic':
+                    content = self._call_anthropic(messages, on_progress)
+                else:
+                    content = self._call_openai(
+                        messages, on_progress, use_json_mode=use_json_mode,
+                    )
 
-        # ---- Shared JSON validation (same for both protocols) ----
-        if not content.strip():
-            raise RuntimeError('LLM 返回空内容')
-        # Tighten whitespace
-        _raw_stripped = content.strip()
-        if not _raw_stripped:
-            raise RuntimeError('LLM 返回空内容')
-        try:
-            json.loads(_raw_stripped)
-        except json.JSONDecodeError:
-            # Try to extract outermost {...} block
-            a, b = _raw_stripped.find('{'), _raw_stripped.rfind('}')
-            if a >= 0 and b > a:
+                # ---- Shared JSON validation (same for both protocols) ----
+                if not content.strip():
+                    raise RuntimeError('LLM 返回空内容')
+                _raw_stripped = content.strip()
                 try:
-                    json.loads(_raw_stripped[a:b + 1])
-                    return _raw_stripped[a:b + 1]
+                    json.loads(_raw_stripped)
                 except json.JSONDecodeError:
-                    pass
-            raise RuntimeError(
-                f'LLM 输出不是合法 JSON（前 200 字符）: {_raw_stripped[:200]}'
-            )
-        return content
+                    # Try to extract outermost {...} block
+                    a, b = _raw_stripped.find('{'), _raw_stripped.rfind('}')
+                    if a >= 0 and b > a:
+                        try:
+                            json.loads(_raw_stripped[a:b + 1])
+                            return _raw_stripped[a:b + 1]
+                        except json.JSONDecodeError:
+                            pass
+                    raise RuntimeError(
+                        'LLM 输出不是合法 JSON（前 200 字符）: '
+                        f'{_raw_stripped[:200]}'
+                    )
+                return content
+
+            except RuntimeError:
+                # JSON parse failure or auth / protocol — try fallback
+                if use_json_mode:
+                    use_json_mode = False
+                    if on_progress:
+                        on_progress(
+                            'JSON 模式失败，重试...', 0.66,
+                        )
+                    continue
+                if last_err:
+                    raise  # already retried with both modes
+                raise
+            except Exception as e:  # noqa: BLE001
+                last_err = e
+                if on_progress:
+                    on_progress(
+                        f'LLM 调用失败，{attempt + 1}/3 重试...', 0.66,
+                    )
+                time.sleep(1 * (3 ** attempt))
+
+        # Exhausted retries
+        if last_err:
+            raise RuntimeError(f'LLM 调用失败（已重试 3 次）: {last_err}')
+        raise RuntimeError('LLM 调用失败（已重试 3 次）')
 
     # ---- OpenAI protocol ----
     def _call_openai(
